@@ -19,7 +19,7 @@ type Movie struct{
 
 type Director struct{
 	Firstname string `json:"firstname"`
-	Lastname string `json:"lastname"`git remote add origin git@github.com:RavinduSulakshana/go_movie_crud.git 
+	Lastname string `json:"lastname"`
 
 }
 
@@ -33,37 +33,63 @@ func getMovies(w http.ResponseWriter,r *http.Request){
 func deleteMovie(w http.ResponseWriter,r *http.Request){
 	w.Header().Set("Content-Type","application/json")
 	params:= mux.Vars(r)
-	
 	for index,item := range movies{
-
 		if item.ID == params["id"]{
-			movies = append(movies[:index],movies[index+1]...)
+			movies = append(movies[:index], movies[index+1:]...)
 			break
 		}
 	}
 	json.NewEncoder(w).Encode(movies)
 }
 
-func getMovie (w http.ResponseWriter,r *http.Request){
+func getMovie(w http.ResponseWriter,r *http.Request){
 	w.Header().Set("Content-Type","application/json")
-	var movie movies
+	params:=mux.Vars(r)
+	for _,item := range(movies){
+		if item.ID == params["id"]{
+			json.NewEncoder(w).Encode(item)
+			return
+		}
+	}
+}
+
+func createMovie(w http.ResponseWriter,r *http.Request){
+	w.Header().Set("Content-Type","application/json")
+	var movie Movie
 	_=json.NewDecoder(r.Body).Decode(&movie)
-	movie.ID=(rand.Intn(10000))
+	movie.ID = strconv.Itoa(rand.Intn(10000000))
+	movies=append(movies,movie)
+	json.NewEncoder(w).Encode(movies)
+}
+
+func updateMovie(w http.ResponseWriter,r *http.Request){
+	w.Header().Set("Content-Type","application/json")
+	params:= mux.Vars(r)
+	for index,item := range(movies){
+		if item.ID==params["id"]{
+			movies=append(movies[:index],movies[index+1:]...)
+			var movie Movie
+			_=json.NewDecoder(r.Body).Decode(&movie)
+			movie.ID=params["id"]
+			movies=append(movies,movie)
+			return
+
+		}
+	}
 }
 
 func main(){
 	r := mux.NewRouter()
-	movies =append(movies,Movie{id:"1",Isbn:"43453423",Title:"Movie One",Director:&Director{Firstname:"John",Lastname:"Joe"}})
-	movies =append(movies,Movie{id:"2",Isbn:"43453343",Title:"Movie Two",Director:&Director{Firstname:"Steve",Lastname:"Smith"}})
+	movies =append(movies,Movie{ID:"1",Isbn:"43453423",Title:"Movie One",Director:&Director{Firstname:"John",Lastname:"Joe"}})
+	movies =append(movies,Movie{ID:"2",Isbn:"43453343",Title:"Movie Two",Director:&Director{Firstname:"Steve",Lastname:"Smith"}})
 
-	r.HandleFunc("/movies".getMovies).Methods("GET")
+	r.HandleFunc("/movies",getMovies).Methods("GET")
 	r.HandleFunc("/movies/{id}",getMovie).Methods("GET")
 	r.HandleFunc("/movies",createMovie).Methods("POST")
 	r.HandleFunc("/movies/{id}",updateMovie).Methods("PUT")
-	r.HandleFunc("/movies/{id}",deleteMovie).Method("DELETE")
-
+	r.HandleFunc("/movies/{id}",deleteMovie).Methods("DELETE")
 	fmt.Println("Server at start on port 8000")
-	log.Fatal(http.ListenAndServe(":8080",r))
+	log.Fatal(http.ListenAndServe(":8000",r))
 
 }
 
